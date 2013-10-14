@@ -17,44 +17,9 @@ try:
 
     from IPython.config import Config
     from IPython.nbconvert.exporters import HTMLExporter
-
-    from IPython.nbconvert.filters.highlight import _pygment_highlight
-    from pygments.formatters import HtmlFormatter
 except Exception as e:
     IPython = False
     raise e
-
-
-CUSTOM_CSS = '''
-<style type="text/css">
-div.input_area {
-    border: none;
-    background: none;
-}
-
-pre.ipynb {
-    padding: 3px 9.5px;
-}
-
-@media print{*{text-shadow:none !important;color:#000 !important;background:transparent !important;box-shadow:none !important;} a,a:visited{text-decoration:underline;} a[href]:after{content:" (" attr(href) ")";} abbr[title]:after{content:" (" attr(title) ")";} .ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:"";} pre,blockquote{border:1px solid #999;page-break-inside:avoid;} thead{display:table-header-group;} tr,img{page-break-inside:avoid;} img{max-width:100% !important;} @page {margin:0.5cm;}p,h2,h3{orphans:3;widows:3;} h2,h3{page-break-after:avoid;}}
-
-.cell.border-box-sizing.code_cell.vbox {
-  max-width: 750px;
-  margin: 0 auto;
-}
-
-pre {
-    font-size: 1em;
-}
-
-</style>
-'''
-
-
-def custom_highlighter(source, language='ipython'):
-    formatter = HtmlFormatter(cssclass='highlight-ipynb')
-    output = _pygment_highlight(source, formatter, language)
-    return output.replace('<pre>', '<pre class="ipynb">')
 
 
 class iPythonNB(BaseReader):
@@ -91,21 +56,10 @@ class iPythonNB(BaseReader):
         metadata['ipython'] = True
 
         # Converting ipythonnb to html
-        config = Config({'CSSHTMLHeaderTransformer': {'enabled': True, 'highlight_class': '.highlight-ipynb'}})
-        exporter = HTMLExporter(config=config, template_file='basic', filters={'highlight2html': custom_highlighter})
+        config = Config({'CSSHTMLHeaderTransformer': {'enabled': True}})
+        exporter = HTMLExporter(config=config, template_file='basic')
         body, info = exporter.from_filename(filepath)
 
-        def filter_tags(s):
-            l = s.split('\n')
-            exclude = ['a', '.rendered_html', '@media']
-            l = [i for i in l if len(list(filter(i.startswith, exclude))) == 0]
-            ans = '\n'.join(l)
-            return STYLE_TAG.format(ans)
-
-        STYLE_TAG = '<style type=\"text/css\">{0}</style>'
-        css = '\n'.join(filter_tags(css) for css in info['inlining']['css'])
-        css = css + CUSTOM_CSS
-        body = css + body
         return body, metadata
 
 
