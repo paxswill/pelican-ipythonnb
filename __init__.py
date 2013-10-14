@@ -17,6 +17,8 @@ try:
 
     from IPython.config import Config
     from IPython.nbconvert.exporters import HTMLExporter
+
+    from jinja2 import FileSystemLoader
 except Exception as e:
     IPython = False
     raise e
@@ -57,7 +59,10 @@ class iPythonNB(BaseReader):
 
         # Converting ipythonnb to html
         config = Config({'CSSHTMLHeaderTransformer': {'enabled': True}})
-        exporter = HTMLExporter(config=config, template_file='basic')
+        here = os.path.dirname(os.path.realpath(__file__))
+        loader = FileSystemLoader(here)
+        exporter = HTMLExporter(config=config, extra_loaders=[loader],
+                template_file='content.tpl')
         body, info = exporter.from_filename(filepath)
 
         return body, metadata
